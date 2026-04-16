@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GGS Tournament Manager | Pro Edition</title>
+    <style>
+        :root {
+            --ggs-blue: #00d9ff;
+            --ggs-bg: #0a0c0e;
+            --ggs-card: #16191c;
+            --ggs-text: #e1e1e1;
+            --ggs-win: #00ff88;
+            --ggs-loss: #ff4655;
+            --ggs-line: #3a434c;
+            --ggs-gold: #ffd54a;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--ggs-bg);
+            color: var(--ggs-text);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #000;
+            padding: 15px;
+            border-bottom: 3px solid var(--ggs-blue);
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            margin: 0;
+            letter-spacing: 3px;
+            font-size: 1.2em;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: 20px auto;
+            padding: 0 20px 40px;
+        }
+
+        .panel {
+            background: var(--ggs-card);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        input {
+            background: #000;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: var(--ggs-blue);
+            color: #000;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            text-transform: uppercase;
+            margin-top: 10px;
+            transition: .2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            opacity: .95;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        th {
+            background: #000;
+            color: var(--ggs-blue);
+            font-size: 0.8em;
+        }
+
+        .match-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .rr-card {
+            background: #21262b;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 5px solid #444;
+        }
+
+        .rr-card.active {
+            border-left-color: var(--ggs-blue);
+        }
+
+        .vs-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0;
+        }
+
+        .score-input {
+            width: 80px !important;
+            height: 40px;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            background: #000;
+            border: 2px solid var(--ggs-blue);
+            color: #fff;
+            border-radius: 4px;
+            margin: 0;
+        }
+
+        .bracket-wrap {
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .bracket-row {
+            display: flex;
+            gap: 28px;
+            min-width: max-content;
+            align-items: stretch;
+            padding: 12px 0 20px;
+        }
+
+        .round-col {
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 36px;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        .round-title {
+            font-size: 0.75em;
+            color: #9aa4ad;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .game-wrap {
+            position: relative;
+            min-height: 96px;
+            display: flex;
+            align-items: center;
+        }
+
+        .game-wrap:not(.last-col)::after {
+            content: "";
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            width: 15px;
+            height: 2px;
+            background: var(--ggs-line);
+            transform: translateY(-50%);
+        }
+
+        .game-card {
+            background: linear-gradient(180deg, #21262b 0%, #1b2025 100%);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #2d3740;
+            border-left: 4px solid #444;
+            width: 100%;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02);
+        }
+
+        .game-card.active {
+            border-left-color: var(--ggs-blue);
+            box-shadow: 0 0 0 1px rgba(0, 217, 255, .12), 0 0 18px rgba(0, 217, 255, .08);
+        }
+
+        .game-label {
+            font-size: 0.68em;
+            color: var(--ggs-blue);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            font-weight: bold;
+        }
+
+        .team-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 9px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 0.92em;
+            background: rgba(255, 255, 255, .02);
+            margin-bottom: 6px;
+            border: 1px solid transparent;
+            transition: .15s ease;
+        }
+
+        .team-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .team-row:hover {
+            background: #2b333b;
+            border-color: #3d4751;
+        }
+
+        .team-row.disabled {
+            cursor: not-allowed;
+            opacity: .6;
+        }
+
+        .winner {
+            color: var(--ggs-win);
+            font-weight: bold;
+            border-color: rgba(0, 255, 136, .2);
+            background: rgba(0, 255, 136, .06);
+        }
+
+        .loser {
+            color: var(--ggs-loss);
+            opacity: 0.65;
+        }
+
+        .champion-box {
+            background: linear-gradient(180deg, #2b2200, #171204);
+            border: 1px solid rgba(255, 213, 74, .35);
+            border-left: 5px solid var(--ggs-gold);
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 0 22px rgba(255, 213, 74, .08);
+        }
+
+        .champion-label {
+            color: var(--ggs-gold);
+            font-size: 0.8em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .champion-name {
+            font-size: 1.25em;
+            font-weight: 700;
+            color: #fff4c6;
+        }
+
+        .mini-note {
+            font-size: 0.78em;
+            color: #9aa4ad;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 12px 30px;
+            }
+
+            .round-col {
+                min-width: 220px;
+            }
+
+            .team-row {
+                font-size: 0.85em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>GOOD GAME SYNDICATE TOURNAMENT</h1>
+    </header>
+
+    <div class="container">
+        <div id="setup-screen" class="panel">
+            <h3>5-TEAM SYNDICATE INITIALIZATION</h3>
+            <div id="teamInputs"></div>
+            <button id="startRR">Start Round Robin Stage</button>
+        </div>
+
+        <div id="rr-screen" class="hidden">
+            <div class="panel">
+                <h2 style="font-size:1em; color: var(--ggs-blue);">GROUP STANDINGS (POINT SYSTEM)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>RANK</th>
+                            <th>TEAM</th>
+                            <th>WINS</th>
+                            <th>LOSSES</th>
+                            <th>PTS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standingsBody"></tbody>
+                </table>
+            </div>
+
+            <div class="panel">
+                <h2 style="font-size:1em;">LIVE FIXTURES (Enter Score: 0 or 1)</h2>
+                <div id="rr-match-container" class="match-list"></div>
+            </div>
+
+            <button id="proceedBracket" class="hidden" style="background: var(--ggs-win); border: 2px solid #fff;">
+                Finalize & Build Playoffs Bracket
+            </button>
+        </div>
+
+        <div id="bracket-screen" class="hidden">
+            <div class="panel">
+                <h2 style="font-size:1em; color: var(--ggs-win);">WINNERS' BRACKET (UPPER)</h2>
+                <div class="bracket-wrap">
+                    <div class="bracket-row" id="winners-bracket"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2 style="font-size:1em; color: var(--ggs-loss);">LOSERS' BRACKET (LOWER)</h2>
+                <div class="bracket-wrap">
+                    <div class="bracket-row" id="losers-bracket"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2 style="font-size:1em; color: var(--ggs-gold);">TOURNAMENT RESULT</h2>
+                <div id="champion-area"></div>
+            </div>
+
+            <button id="resetBtn" style="background:#333; color:#fff; width:auto; padding:10px 25px;">Reset All
+                Data</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const teamInputs = document.getElementById('teamInputs');
+            const setupScreen = document.getElementById('setup-screen');
+            const rrScreen = document.getElementById('rr-screen');
+            const bracketScreen = document.getElementById('bracket-screen');
+            const standingsBody = document.getElementById('standingsBody');
+            const rrMatchContainer = document.getElementById('rr-match-container');
+            const proceedBracketBtn = document.getElementById('proceedBracket');
+            const winnersBracket = document.getElementById('winners-bracket');
+            const losersBracket = document.getElementById('losers-bracket');
+            const championArea = document.getElementById('champion-area');
+
+            let teams = [];
+            let rrMatches = [];
+            let stats = {};
+            let sortedSeeds = [];
+            let champion = "";
+
+            let wb = {};
+            let lb = {};
+
+            function makeBracketObjects() {
+                wb = {
+                    g1: { p1: "", p2: "", win: null, label: "Upper Round 1" },
+                    g2: { p1: "", p2: "", win: null, label: "Upper Semifinal A" },
+                    g3: { p1: "", p2: "", win: null, label: "Upper Semifinal B" },
+                    g4: { p1: "", p2: "", win: null, label: "Upper Finals" },
+                    gf: { p1: "", p2: "", win: null, label: "Grand Finals" }
+                };
+
+                lb = {
+                    l1: { p1: "", p2: "", win: null, label: "Lower Round 1" },
+                    l2: { p1: "", p2: "", win: null, label: "Lower Semifinal" },
+                    l3: { p1: "", p2: "", win: null, label: "Loser Finals" }
+                };
+            }
+
+            makeBracketObjects();
+
+            for (let i = 1; i <= 5; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 't-in';
+                input.value = 'Team ' + i;
+                teamInputs.appendChild(input);
+            }
+
+            document.getElementById('startRR').addEventListener('click', function () {
+                const inputEls = document.querySelectorAll('.t-in');
+                teams = Array.from(inputEls).map(el => el.value.trim()).filter(Boolean);
+
+                if (teams.length !== 5) {
+                    alert('Please enter exactly 5 teams.');
+                    return;
+                }
+
+                const lowered = teams.map(t => t.toLowerCase());
+                if (new Set(lowered).size !== 5) {
+                    alert('Team names must be unique.');
+                    return;
+                }
+
+                rrMatches = [];
+                stats = {};
+                sortedSeeds = [];
+                champion = "";
+                makeBracketObjects();
+
+                teams.forEach(team => {
+                    stats[team] = { w: 0, l: 0, pts: 0 };
+                });
+
+                for (let i = 0; i < teams.length; i++) {
+                    for (let j = i + 1; j < teams.length; j++) {
+                        rrMatches.push({
+                            t1: teams[i],
+                            t2: teams[j],
+                            s1: null,
+                            s2: null,
+                            done: false
+                        });
+                    }
+                }
+
+                setupScreen.classList.add('hidden');
+                rrScreen.classList.remove('hidden');
+
+                renderRR();
+            });
+
+            function renderRR() {
+                rrMatchContainer.innerHTML = '';
+
+                rrMatches.forEach((m, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'rr-card ' + (m.done ? '' : 'active');
+
+                    card.innerHTML = `
+                <div style="font-size:0.7em; color:var(--ggs-blue); margin-bottom:10px;">BO1 MATCH #${i + 1}</div>
+                <div class="vs-row">
+                    <span style="font-weight:bold;">${m.t1}</span>
+                    <input type="number" class="score-input rr-s1" data-idx="${i}" min="0" max="1" value="${m.s1 ?? ''}" ${m.done ? 'disabled' : ''}>
+                </div>
+                <div class="vs-row">
+                    <span style="font-weight:bold;">${m.t2}</span>
+                    <input type="number" class="score-input rr-s2" data-idx="${i}" min="0" max="1" value="${m.s2 ?? ''}" ${m.done ? 'disabled' : ''}>
+                </div>
+                ${!m.done
+                            ? `<button class="conf-rr" data-idx="${i}">Lock Result</button>`
+                            : `<div style="text-align:center; font-size:0.7em; color:var(--ggs-win); margin-top:10px;">RESULT VERIFIED</div>`
+                        }
+            `;
+
+                    rrMatchContainer.appendChild(card);
+                });
+
+                bindRRInputs();
+                updateStandings();
+            }
+
+            function bindRRInputs() {
+                document.querySelectorAll('.score-input').forEach(input => {
+                    input.addEventListener('input', function () {
+                        const idx = Number(this.dataset.idx);
+                        let val = parseInt(this.value, 10);
+
+                        if (isNaN(val)) {
+                            rrMatches[idx].s1 = null;
+                            rrMatches[idx].s2 = null;
+                            return;
+                        }
+
+                        if (val > 1) val = 1;
+                        if (val < 0) val = 0;
+                        this.value = val;
+
+                        const oppVal = val === 1 ? 0 : 1;
+
+                        if (this.classList.contains('rr-s1')) {
+                            rrMatches[idx].s1 = val;
+                            rrMatches[idx].s2 = oppVal;
+                            const other = document.querySelector('.rr-s2[data-idx="' + idx + '"]');
+                            if (other) other.value = oppVal;
+                        } else {
+                            rrMatches[idx].s2 = val;
+                            rrMatches[idx].s1 = oppVal;
+                            const other = document.querySelector('.rr-s1[data-idx="' + idx + '"]');
+                            if (other) other.value = oppVal;
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.conf-rr').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const i = Number(this.dataset.idx);
+
+                        if (
+                            rrMatches[i].s1 === null ||
+                            rrMatches[i].s2 === null ||
+                            rrMatches[i].s1 === rrMatches[i].s2
+                        ) {
+                            alert('Invalid result. One team must win (1) and one must lose (0).');
+                            return;
+                        }
+
+                        rrMatches[i].done = true;
+                        renderRR();
+                    });
+                });
+            }
+
+            function updateStandings() {
+                teams.forEach(team => {
+                    stats[team] = { w: 0, l: 0, pts: 0 };
+                });
+
+                let done = 0;
+
+                rrMatches.forEach(m => {
+                    if (m.done) {
+                        done++;
+                        if (m.s1 > m.s2) {
+                            stats[m.t1].w++;
+                            stats[m.t1].pts += 3;
+                            stats[m.t2].l++;
+                        } else {
+                            stats[m.t2].w++;
+                            stats[m.t2].pts += 3;
+                            stats[m.t1].l++;
+                        }
+                    }
+                });
+
+                sortedSeeds = [...teams].sort((a, b) => {
+                    if (stats[b].pts !== stats[a].pts) return stats[b].pts - stats[a].pts;
+                    if (stats[b].w !== stats[a].w) return stats[b].w - stats[a].w;
+                    return stats[a].l - stats[b].l;
+                });
+
+                standingsBody.innerHTML = '';
+                sortedSeeds.forEach((team, idx) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${team}</td>
+                <td>${stats[team].w}</td>
+                <td>${stats[team].l}</td>
+                <td>${stats[team].pts}</td>
+            `;
+                    standingsBody.appendChild(row);
+                });
+
+                if (done === rrMatches.length) {
+                    proceedBracketBtn.classList.remove('hidden');
+                } else {
+                    proceedBracketBtn.classList.add('hidden');
+                }
+            }
+
+            proceedBracketBtn.addEventListener('click', function () {
+                makeBracketObjects();
+                champion = "";
+
+                wb.g1.p1 = sortedSeeds[3];
+                wb.g1.p2 = sortedSeeds[4];
+
+                wb.g2.p1 = sortedSeeds[0];
+
+                wb.g3.p1 = sortedSeeds[1];
+                wb.g3.p2 = sortedSeeds[2];
+
+                rrScreen.classList.add('hidden');
+                bracketScreen.classList.remove('hidden');
+
+                renderBrackets();
+            });
+
+            function drawGame(id, g, isLastCol = false) {
+                const clickable = g.p1 && g.p2 && !g.win;
+
+                return `
+            <div class="game-wrap ${isLastCol ? 'last-col' : ''}">
+                <div class="game-card ${clickable ? 'active' : ''}">
+                    <div class="game-label">${g.label}</div>
+                    <div class="team-row ${!clickable ? 'disabled' : ''} ${g.win === 'p1' ? 'winner' : (g.win === 'p2' ? 'loser' : '')}" data-game="${id}" data-slot="p1">
+                        <span>${g.p1 || 'TBD'}</span>
+                    </div>
+                    <div class="team-row ${!clickable ? 'disabled' : ''} ${g.win === 'p2' ? 'winner' : (g.win === 'p1' ? 'loser' : '')}" data-game="${id}" data-slot="p2">
+                        <span>${g.p2 || 'TBD'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+
+            function renderChampion() {
+                if (champion) {
+                    championArea.innerHTML = `
+                <div class="champion-box">
+                    <div class="champion-label">Champion</div>
+                    <div class="champion-name">🏆 ${champion}</div>
+                    <div class="mini-note">Grand Finals winner</div>
+                </div>
+            `;
+                } else {
+                    championArea.innerHTML = `
+                <div class="champion-box">
+                    <div class="champion-label">Champion</div>
+                    <div class="champion-name">TBD</div>
+                    <div class="mini-note">Complete the Grand Finals to determine the winner.</div>
+                </div>
+            `;
+                }
+            }
+
+            function renderBrackets() {
+                winnersBracket.innerHTML = `
+            <div class="round-col">
+                <div class="round-title">Round 1</div>
+                ${drawGame('g1', wb.g1)}
+            </div>
+
+            <div class="round-col">
+                <div class="round-title">Semifinals</div>
+                ${drawGame('g2', wb.g2)}
+                ${drawGame('g3', wb.g3)}
+            </div>
+
+            <div class="round-col">
+                <div class="round-title">Upper Finals</div>
+                ${drawGame('g4', wb.g4)}
+            </div>
+
+            <div class="round-col">
+                <div class="round-title">Grand Finals</div>
+                ${drawGame('gf', wb.gf, true)}
+            </div>
+        `;
+
+                losersBracket.innerHTML = `
+            <div class="round-col">
+                <div class="round-title">Lower Round 1</div>
+                ${drawGame('l1', lb.l1)}
+            </div>
+
+            <div class="round-col">
+                <div class="round-title">Lower Semifinal</div>
+                ${drawGame('l2', lb.l2)}
+            </div>
+
+            <div class="round-col">
+                <div class="round-title">Loser Finals</div>
+                ${drawGame('l3', lb.l3, true)}
+            </div>
+        `;
+
+                bindBracketClicks();
+                renderChampion();
+            }
+
+            function bindBracketClicks() {
+                document.querySelectorAll('.team-row[data-game]').forEach(row => {
+                    row.addEventListener('click', function () {
+                        const gameId = this.dataset.game;
+                        const slot = this.dataset.slot;
+                        pickWinner(gameId, slot);
+                    });
+                });
+            }
+
+            function pickWinner(id, slot) {
+                const g = id.startsWith('g') ? wb[id] : lb[id];
+                if (!g || !g.p1 || !g.p2 || g.win) return;
+
+                g.win = slot;
+
+                const w = slot === 'p1' ? g.p1 : g.p2;
+                const l = slot === 'p1' ? g.p2 : g.p1;
+
+                if (id === 'g1') {
+                    wb.g2.p2 = w;
+                    lb.l1.p1 = l;
+                }
+
+                if (id === 'g2') {
+                    wb.g4.p1 = w;
+                    lb.l2.p2 = l;
+                }
+
+                if (id === 'g3') {
+                    wb.g4.p2 = w;
+                    lb.l1.p2 = l;
+                }
+
+                if (id === 'g4') {
+                    wb.gf.p1 = w;
+                    lb.l3.p2 = l;
+                }
+
+                if (id === 'l1') {
+                    lb.l2.p1 = w;
+                }
+
+                if (id === 'l2') {
+                    lb.l3.p1 = w;
+                }
+
+                if (id === 'l3') {
+                    wb.gf.p2 = w;
+                }
+
+                if (id === 'gf') {
+                    champion = w;
+                }
+
+                renderBrackets();
+            }
+
+            document.getElementById('resetBtn').addEventListener('click', function () {
+                location.reload();
+            });
+        });
+    </script>
+
+</body>
+
+</html>
