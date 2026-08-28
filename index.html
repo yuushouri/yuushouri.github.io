@@ -253,6 +253,21 @@
             opacity: .6;
         }
 
+        .team-row[draggable="true"] {
+            cursor: grab;
+        }
+
+        .team-row.dragging {
+            opacity: .35;
+            cursor: grabbing;
+        }
+
+        .team-row.drag-over {
+            border-color: var(--ggs-blue);
+            background: rgba(0, 217, 255, .14);
+            box-shadow: 0 0 0 2px rgba(0, 217, 255, .18);
+        }
+
         .winner {
             color: var(--ggs-win);
             font-weight: bold;
@@ -390,7 +405,7 @@
         <div id="bracket-screen" class="hidden">
             <div class="panel">
                 <h2 style="font-size:1em; color: var(--ggs-win);">WINNERS' BRACKET (UPPER)</h2>
-                <div class="mini-note">Choose participants from the dropdowns. Click a team to select or change the winner.</div>
+                <div class="mini-note">Drag and drop teams between bracket slots, or use the dropdowns. Click a team to select or change the winner.</div>
                 <div class="bracket-wrap">
                     <div class="bracket-row" id="winners-bracket"></div>
                 </div>
@@ -766,13 +781,13 @@
                     <select class="bracket-select" data-game="${id}" data-slot="p1" aria-label="${g.label} first participant">
                         ${optionHtml(g.p1)}
                     </select>
-                    <div class="team-row ${!clickable ? 'disabled' : ''} ${g.win === 'p1' ? 'winner' : (g.win === 'p2' ? 'loser' : '')}" data-game="${id}" data-slot="p1">
+                    <div class="team-row ${!clickable ? 'disabled' : ''} ${g.win === 'p1' ? 'winner' : (g.win === 'p2' ? 'loser' : '')}" data-game="${id}" data-slot="p1" draggable="${Boolean(g.p1)}">
                         <span>${g.p1 || 'TBD'}</span>
                     </div>
                     <select class="bracket-select" data-game="${id}" data-slot="p2" aria-label="${g.label} second participant">
                         ${optionHtml(g.p2)}
                     </select>
-                    <div class="team-row ${!clickable ? 'disabled' : ''} ${g.win === 'p2' ? 'winner' : (g.win === 'p1' ? 'loser' : '')}" data-game="${id}" data-slot="p2">
+                    <div class="team-row ${!clickable ? 'disabled' : ''} ${g.win === 'p2' ? 'winner' : (g.win === 'p1' ? 'loser' : '')}" data-game="${id}" data-slot="p2" draggable="${Boolean(g.p2)}">
                         <span>${g.p2 || 'TBD'}</span>
                     </div>
                 </div>
@@ -843,6 +858,7 @@
 
                 bindBracketClicks();
                 bindBracketEditors();
+                bindBracketDragDrop();
                 renderChampion();
             }
 
@@ -877,6 +893,73 @@
                         game[this.dataset.slot] = this.value;
                         game.win = null;
                         clearDependentResults(this.dataset.game);
+                        renderBrackets();
+                        saveState();
+                    });
+                });
+            }
+
+            function bindBracketDragDrop() {
+                let dragged = null;
+
+                document.querySelectorAll('.team-row[data-game]').forEach(row => {
+                    row.addEventListener('dragstart', function (event) {
+                        const game = getGame(this.dataset.game);
+                        if (!game || !game[this.dataset.slot]) {
+                            event.preventDefault();
+                            return;
+                        }
+
+                        dragged = {
+                            gameId: this.dataset.game,
+                            slot: this.dataset.slot
+                        };
+                        this.classList.add('dragging');
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', JSON.stringify(dragged));
+                    });
+
+                    row.addEventListener('dragend', function () {
+                        dragged = null;
+                        document.querySelectorAll('.team-row').forEach(el => {
+                            el.classList.remove('dragging', 'drag-over');
+                        });
+                    });
+
+                    row.addEventListener('dragover', function (event) {
+                        if (!dragged) return;
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'move';
+                        this.classList.add('drag-over');
+                    });
+
+                    row.addEventListener('dragleave', function () {
+                        this.classList.remove('drag-over');
+                    });
+
+                    row.addEventListener('drop', function (event) {
+                        event.preventDefault();
+                        this.classList.remove('drag-over');
+                        if (!dragged) return;
+
+                        const target = {
+                            gameId: this.dataset.game,
+                            slot: this.dataset.slot
+                        };
+                        if (dragged.gameId === target.gameId && dragged.slot === target.slot) return;
+
+                        const sourceGame = getGame(dragged.gameId);
+                        const targetGame = getGame(target.gameId);
+                        if (!sourceGame || !targetGame) return;
+
+                        const sourceTeam = sourceGame[dragged.slot];
+                        const targetTeam = targetGame[target.slot];
+                        sourceGame[dragged.slot] = targetTeam;
+                        targetGame[target.slot] = sourceTeam;
+                        sourceGame.win = null;
+                        targetGame.win = null;
+                        clearDependentResults(dragged.gameId);
+                        clearDependentResults(target.gameId);
                         renderBrackets();
                         saveState();
                     });
